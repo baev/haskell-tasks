@@ -1,0 +1,23 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+
+import Prelude (($), Int, String, Num, Show, Read, Double, (+), (*), (-), (/), Ord, Eq, Bool(True, False))
+import qualified Data.List as List
+import Data.Monoid
+
+class Monad m where
+	(>>=) :: m a -> (a -> m b) -> m b
+    	return :: a -> m a
+
+newtype State s w a = State { runState :: s -> (a,s,w) }
+
+instance (Monoid v) => Monad (State s v) where  
+    return x = State $ \s -> (x,s,mempty)  
+    State h >>= f = State $ \s -> let (a, s2, w1) = h s in  let (b, s3, w2) = runState (f a) s2 in (b, s3, mappend w1 w2)
+
+get s = (s, ["get"], s)
+put x s = ((), ["put"], x)
+
+
+tell msg = State $ \s -> ((), s, msg) --mappend mempty msg)
+
+empty x y = runState (return x) y

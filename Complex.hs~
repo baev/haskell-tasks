@@ -1,0 +1,81 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+
+import Prelude (String,Num,Show,Read,Double,(+), (*), (-), (/),Ord,Eq,Bool(True, False))
+import qualified Data.Map as Map
+
+data Complex = Pair { fst :: Double, snd :: Double } deriving (Show,Read)
+
+
+re :: Complex -> Double
+re a = fst a
+
+im :: Complex -> Double
+im a = snd a
+
+conj :: Complex -> Complex
+conj a = Pair (fst a) (-snd a)
+
+(++) :: Complex -> Complex -> Complex
+(++) a b = Pair ((fst a) + (fst b)) ((snd a) + (snd b))
+
+neg :: Complex -> Complex
+neg a = Pair (-fst a) (-snd a)
+
+(.-) :: Complex -> Complex -> Complex
+(.-) a b = a ++ (neg b)
+
+(.*) :: Complex -> Complex -> Complex
+(.*) a b = Pair ((fst a) * (fst b) - (snd a) * (snd b)) ((fst b) * (snd a) + (fst a) * (snd b))
+
+(./.) :: Complex -> Double -> Complex
+(./.) a b = Pair ((fst a) / b) ((snd a) / b)
+
+r2 :: Complex -> Double
+r2 a = (fst a) * (fst a) + (snd a) * (snd a)
+
+(./) :: Complex -> Complex -> Complex
+(./) a b = a .* (conj b) ./. (r2 b)
+
+a = Pair 4.0 1.3
+b = Pair 1.2 5.1
+
+		
+data From = A | B | C deriving (Show,Read,Ord,Eq)
+
+class FiniteType a where 
+	hasNext :: a -> Bool
+	next :: a -> a
+	first :: a
+	last :: a
+
+instance FiniteType From where
+	hasNext C = False
+	hasNext _ = True
+	next A = B
+	next B = C
+	first = A
+	last = C
+
+class Finite a b where 
+	finite :: (a -> b) -> Map.Map a b
+	
+f :: From -> Double
+f A = 0
+f B = 1
+f C = 2
+
+g :: From -> Double
+g A = -1
+g B = -2
+g C = -3
+
+
+insAll :: (FiniteType a) => (a -> Double) -> a -> Map.Map a Double-> Map.Map a Double
+insAll f a b = case (hasNext a) of 
+	True -> insAll f (next a) (Map.insert a (f a) b)
+	False -> Map.insert a (f a) b
+
+
+instance (FiniteType a, Ord a, Eq a) => Finite a Double where
+	finite f = insAll f first Map.empty
+
